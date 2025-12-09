@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import MainNav from './components/MainNav';
 
 export const metadata: Metadata = {
   title: 'Motor Billing UAE',
@@ -14,7 +15,8 @@ export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en">
       <body className="min-h-screen bg-gray-50 text-gray-900">
-        {children}
+        <MainNav />
+        <main className="pt-2">{children}</main>
       </body>
     </html>
   );
