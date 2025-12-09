@@ -1,7 +1,8 @@
 'use client';
 
-import { memo, useMemo } from 'react';
+import { memo, useEffect, useState } from 'react';
 import type { FC } from 'react';
+import { createClient as createSupabaseBrowserClient } from '@/lib/supabase/client';
 
 type InvoiceStatus = 'pending' | 'paid' | 'overdue';
 
@@ -19,6 +20,12 @@ interface DashboardStats {
   totalPaid: number;
   invoiceCount: number;
   overdueCount: number;
+}
+
+interface ApiState<T> {
+  data: T | null;
+  error: string | null;
+  loading: boolean;
 }
 
 const MOCK_INVOICES: InvoiceSummary[] = [
@@ -68,12 +75,116 @@ const computeStats = (invoices: InvoiceSummary[]): DashboardStats => {
 };
 
 const HomePage: FC = memo(function HomePage() {
-  const invoices: InvoiceSummary[] = MOCK_INVOICES;
+  const [invoiceState, setInvoiceState] = useState<ApiState<InvoiceSummary[]>>({
+    data: null,
+    error: null,
+    loading: true,
+  });
 
-  const stats: DashboardStats = useMemo(
-    () => computeStats(invoices),
-    [invoices]
-  );
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchInvoices = async () => {
+      // If Supabase env is missing, fall back to mock data without throwing
+      if (
+        !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+        !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      ) {
+        if (!isMounted) return;
+        setInvoiceState({
+          data: MOCK_INVOICES,
+          error: 'Supabase not configured. Showing demo invoices.',
+          loading: false,
+        });
+        return;
+      }
+
+      try {
+        const supabase = createSupabaseBrowserClient();
+
+        const { data, error } = await supabase
+          .from('invoices')
+          .select(
+            `
+              id,
+              policy_number,
+              customer_name,
+              total_amount,
+              status,
+              created_at
+            `
+          )
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (!isMounted) return;
+
+        if (error) {
+          setInvoiceState({
+            data: MOCK_INVOICES,
+            error: `Supabase error: ${error.message}. Showing demo invoices.`,
+            loading: false,
+          });
+          return;
+        }
+
+        const mapped: InvoiceSummary[] =
+          (data ?? []).map((row: unknown) => {
+            const r = row as {
+              id: string;
+              policy_number: string | null;
+              customer_name: string | null;
+              total_amount: number | null;
+              status: string | null;
+              created_at: string | null;
+            };
+
+            const normalizedStatus: InvoiceStatus =
+              r.status === 'paid'
+                ? 'paid'
+                : r.status === 'overdue'
+                ? 'overdue'
+                : 'pending';
+
+            return {
+              id: r.id,
+              policyNumber: r.policy_number ?? 'N/A',
+              customerName: r.customer_name ?? '—',
+              totalAmount: r.total_amount ?? 0,
+              status: normalizedStatus,
+              createdAt: r.created_at ?? '',
+            };
+          }) || [];
+
+        setInvoiceState({
+          data: mapped.length > 0 ? mapped : MOCK_INVOICES,
+          error:
+            mapped.length > 0
+              ? null
+              : 'No invoices found in Supabase. Showing demo invoices.',
+          loading: false,
+        });
+      } catch (err) {
+        if (!isMounted) return;
+        const msg =
+          err instanceof Error ? err.message : 'Unknown Supabase client error';
+        setInvoiceState({
+          data: MOCK_INVOICES,
+          error: `Supabase client error: ${msg}. Showing demo invoices.`,
+          loading: false,
+        });
+      }
+    };
+
+    void fetchInvoices();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const invoices: InvoiceSummary[] = invoiceState.data ?? MOCK_INVOICES;
+  const stats: DashboardStats = computeStats(invoices);
 
   return (
     <main className="flex min-h-screen items-start justify-center bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
@@ -88,9 +199,15 @@ const HomePage: FC = memo(function HomePage() {
             </p>
           </div>
           <div className="flex flex-col items-start gap-1 text-sm text-gray-700 sm:items-end">
-            <span className="font-medium">Demo Mode</span>
+            <span className="font-medium">
+              {process.env.NEXT_PUBLIC_SUPABASE_URL
+                ? 'Supabase Connected'
+                : 'Demo Mode (No Supabase)'}
+            </span>
             <span className="text-xs text-gray-500">
-              Auth and Supabase disabled · Static sample data only
+              {process.env.NEXT_PUBLIC_SUPABASE_URL
+                ? 'Reading invoices from Supabase when available'
+                : 'Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to enable backend'}
             </span>
           </div>
         </header>
@@ -140,252 +257,36 @@ const HomePage: FC = memo(function HomePage() {
           </article>
         </section>
 
-        <section
-          aria-labelledby="new-policy-title"
-          className="grid gap-6 lg:grid-cols-2"
-        >
-          <article className="rounded-2xl bg-white p-6 shadow-md">
-            <h2
-              id="new-policy-title"
-              className="mb-4 text-lg font-semibold text-gray-900"
-            >
-              New Motor Policy &amp; Invoice (Demo)
-            </h2>
-            <p className="mb-4 text-sm text-gray-600">
-              In this demo build, the form is read-only and does not save to a
-              backend. It shows the fields you&apos;ll capture when we re‑enable
-              Supabase.
-            </p>
-
-            <form
-              className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2"
-              aria-disabled="true"
-            >
-              <div className="md:col-span-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Customer
-                </p>
-              </div>
-              <div>
-                <label
-                  htmlFor="customerName"
-                  className="mb-1 block text-xs font-medium text-gray-700"
-                >
-                  Full Name
-                </label>
-                <input
-                  id="customerName"
-                  type="text"
-                  disabled
-                  placeholder="e.g. Ahmed Al Farsi"
-                  className="w-full cursor-not-allowed rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-500"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="customerEmail"
-                  className="mb-1 block text-xs font-medium text-gray-700"
-                >
-                  Email
-                </label>
-                <input
-                  id="customerEmail"
-                  type="email"
-                  disabled
-                  placeholder="e.g. ahmed@example.com"
-                  className="w-full cursor-not-allowed rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-500"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="customerPhone"
-                  className="mb-1 block text-xs font-medium text-gray-700"
-                >
-                  Mobile
-                </label>
-                <input
-                  id="customerPhone"
-                  type="tel"
-                  disabled
-                  placeholder="+971 50 123 4567"
-                  className="w-full cursor-not-allowed rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-500"
-                />
-              </div>
-
-              <div className="md:col-span-2 mt-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Vehicle &amp; Cover
-                </p>
-              </div>
-              <div>
-                <label
-                  htmlFor="vehicleMake"
-                  className="mb-1 block text-xs font-medium text-gray-700"
-                >
-                  Make
-                </label>
-                <input
-                  id="vehicleMake"
-                  type="text"
-                  disabled
-                  placeholder="Toyota"
-                  className="w-full cursor-not-allowed rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-500"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="vehicleModel"
-                  className="mb-1 block text-xs font-medium text-gray-700"
-                >
-                  Model
-                </label>
-                <input
-                  id="vehicleModel"
-                  type="text"
-                  disabled
-                  placeholder="Land Cruiser"
-                  className="w-full cursor-not-allowed rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-500"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="vehicleYear"
-                  className="mb-1 block text-xs font-medium text-gray-700"
-                >
-                  Year
-                </label>
-                <input
-                  id="vehicleYear"
-                  type="number"
-                  disabled
-                  placeholder="2022"
-                  className="w-full cursor-not-allowed rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-500"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="coverType"
-                  className="mb-1 block text-xs font-medium text-gray-700"
-                >
-                  Cover Type
-                </label>
-                <select
-                  id="coverType"
-                  disabled
-                  className="w-full cursor-not-allowed rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-500"
-                >
-                  <option>Comprehensive</option>
-                  <option>Third Party Liability</option>
-                </select>
-              </div>
-
-              <div className="md:col-span-2 mt-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Premium &amp; VAT
-                </p>
-              </div>
-              <div>
-                <label
-                  htmlFor="basePremium"
-                  className="mb-1 block text-xs font-medium text-gray-700"
-                >
-                  Base Premium (AED)
-                </label>
-                <input
-                  id="basePremium"
-                  type="number"
-                  disabled
-                  placeholder="1500.00"
-                  className="w-full cursor-not-allowed rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-500"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="brokerFee"
-                  className="mb-1 block text-xs font-medium text-gray-700"
-                >
-                  Broker/Admin Fee (AED)
-                </label>
-                <input
-                  id="brokerFee"
-                  type="number"
-                  disabled
-                  placeholder="250.00"
-                  className="w-full cursor-not-allowed rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-500"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="vatRate"
-                  className="mb-1 block text-xs font-medium text-gray-700"
-                >
-                  VAT Rate (%)
-                </label>
-                <input
-                  id="vatRate"
-                  type="number"
-                  disabled
-                  placeholder="5"
-                  className="w-full cursor-not-allowed rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-500"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="policyStartDate"
-                  className="mb-1 block text-xs font-medium text-gray-700"
-                >
-                  Start Date
-                </label>
-                <input
-                  id="policyStartDate"
-                  type="date"
-                  disabled
-                  className="w-full cursor-not-allowed rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-500"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="policyEndDate"
-                  className="mb-1 block text-xs font-medium text-gray-700"
-                >
-                  End Date
-                </label>
-                <input
-                  id="policyEndDate"
-                  type="date"
-                  disabled
-                  className="w-full cursor-not-allowed rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-500"
-                />
-              </div>
-
-              <div className="md:col-span-2 flex flex-col items-start gap-2 pt-2 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs text-gray-500">
-                  When Supabase is re‑enabled, this button will create the
-                  customer, policy, and invoice in your database.
-                </p>
-                <button
-                  type="button"
-                  disabled
-                  className="cursor-not-allowed rounded-lg bg-gray-300 px-4 py-2 text-xs font-semibold text-gray-600"
-                >
-                  Create Policy &amp; Invoice (Disabled in demo)
-                </button>
-              </div>
-            </form>
-          </article>
-
-          <article
-            aria-labelledby="recent-invoices-title"
-            className="rounded-2xl bg-white p-6 shadow-md"
+        {invoiceState.error && (
+          <section
+            aria-label="Supabase status"
+            className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800"
           >
-            <div className="mb-4 flex items-center justify-between gap-2">
-              <h2
-                id="recent-invoices-title"
-                className="text-lg font-semibold text-gray-900"
-              >
-                Recent Invoices (Sample Data)
-              </h2>
+            {invoiceState.error}
+          </section>
+        )}
+
+        <section
+          aria-labelledby="recent-invoices-title"
+          className="rounded-2xl bg-white p-6 shadow-md"
+        >
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <h2
+              id="recent-invoices-title"
+              className="text-lg font-semibold text-gray-900"
+            >
+              Recent Invoices
+            </h2>
+          </div>
+
+          {invoiceState.loading ? (
+            <div className="flex items-center justify-center py-10">
+              <div className="flex items-center gap-3">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
+                <span className="text-sm text-gray-600">Loading invoices…</span>
+              </div>
             </div>
+          ) : (
             <div className="overflow-hidden rounded-xl border border-gray-100">
               <div className="grid grid-cols-4 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-600">
                 <div>Policy #</div>
@@ -395,7 +296,7 @@ const HomePage: FC = memo(function HomePage() {
               </div>
               {invoices.length === 0 ? (
                 <div className="px-3 py-6 text-center text-xs text-gray-500">
-                  No invoices in demo dataset.
+                  No invoices found.
                 </div>
               ) : (
                 <ul className="divide-y divide-gray-100">
@@ -431,7 +332,7 @@ const HomePage: FC = memo(function HomePage() {
                 </ul>
               )}
             </div>
-          </article>
+          )}
         </section>
       </div>
     </main>
