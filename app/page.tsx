@@ -1,19 +1,14 @@
 'use client';
 
 import type { FC } from 'react';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import type { BillingStats, Invoice, Policy } from '@/lib/billing/types';
+import type { ApiState } from '@/lib/billing/types';
 import { DEMO_INVOICES, DEMO_POLICIES } from '@/lib/billing/demoData';
 import { computeBillingStats } from '@/lib/billing/stats';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import PolicyTable from './components/PolicyTable';
 import InvoiceTable from './components/InvoiceTable';
-
-interface ApiState<T> {
-  data: T | null;
-  error: string | null;
-  loading: boolean;
-}
 
 const DashboardPage: FC = memo(function DashboardPage() {
   const [policyState, setPolicyState] = useState<ApiState<Policy[]>>({
@@ -39,12 +34,12 @@ const DashboardPage: FC = memo(function DashboardPage() {
       if (!isMounted) return;
       setPolicyState({
         data: DEMO_POLICIES,
-        error: 'Supabase not configured, using demo policies.',
+        error: 'Supabase not configured. Showing demo policies.',
         loading: false,
       });
       setInvoiceState({
         data: DEMO_INVOICES,
-        error: 'Supabase not configured, using demo invoices.',
+        error: 'Supabase not configured. Showing demo invoices.',
         loading: false,
       });
       return;
@@ -71,7 +66,7 @@ const DashboardPage: FC = memo(function DashboardPage() {
             `,
             )
             .order('inception_date', { ascending: false })
-            .limit(200),
+            .limit(100),
           supabase
             .from('invoices')
             .select(
@@ -86,7 +81,7 @@ const DashboardPage: FC = memo(function DashboardPage() {
             `,
             )
             .order('issue_date', { ascending: false })
-            .limit(500),
+            .limit(200),
         ]);
 
         if (!isMounted) return;
@@ -158,26 +153,26 @@ const DashboardPage: FC = memo(function DashboardPage() {
 
         setPolicyState({
           data: mappedPolicies.length ? mappedPolicies : DEMO_POLICIES,
-          error: mappedPolicies.length ? null : 'No policies found in Supabase, using demo data.',
+          error: mappedPolicies.length ? null : 'No policies in Supabase. Showing demo.',
           loading: false,
         });
 
         setInvoiceState({
           data: mappedInvoices.length ? mappedInvoices : DEMO_INVOICES,
-          error: mappedInvoices.length ? null : 'No invoices found in Supabase, using demo data.',
+          error: mappedInvoices.length ? null : 'No invoices in Supabase. Showing demo.',
           loading: false,
         });
-      } catch (error) {
+      } catch (err) {
         if (!isMounted) return;
-        const message = error instanceof Error ? error.message : 'Unknown Supabase error.';
+        const msg = err instanceof Error ? err.message : 'Unknown Supabase error';
         setPolicyState({
           data: DEMO_POLICIES,
-          error: `Supabase error: ${message} — using demo policies.`,
+          error: `Supabase error: ${msg}. Showing demo policies.`,
           loading: false,
         });
         setInvoiceState({
           data: DEMO_INVOICES,
-          error: `Supabase error: ${message} — using demo invoices.`,
+          error: `Supabase error: ${msg}. Showing demo invoices.`,
           loading: false,
         });
       }
@@ -198,21 +193,21 @@ const DashboardPage: FC = memo(function DashboardPage() {
     [policies, invoices],
   );
 
-  const environmentLabel = hasSupabaseEnv ? 'Supabase Connected' : 'Demo Mode (no Supabase)';
-  const environmentHint = hasSupabaseEnv
-    ? 'Reading from Supabase tables: policies, invoices.'
-    : 'Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local to use a real database.';
+  const envLabel = hasSupabaseEnv ? 'Supabase Connected' : 'Demo Mode';
+  const envHint = hasSupabaseEnv
+    ? 'Using Supabase tables: policies, invoices'
+    : 'Configure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to enable Supabase';
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 sm:px-6 lg:px-8">
-      {/* Top header */}
+    <main className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+      {/* Header */}
       <header className="flex flex-col gap-4 rounded-2xl bg-white/90 p-6 shadow-sm ring-1 ring-slate-100 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
             Billing Control Center
           </h1>
           <p className="mt-1 text-sm text-slate-600">
-            Real-time view of motor policies, invoices, and collections across the UAE.
+            Portfolio, receivables, and collections overview for UAE motor book.
           </p>
         </div>
         <div className="flex flex-col items-start gap-1 text-xs text-slate-600 sm:items-end">
@@ -222,19 +217,19 @@ const DashboardPage: FC = memo(function DashboardPage() {
                 hasSupabaseEnv ? 'bg-emerald-500' : 'bg-amber-400'
               }`}
             />
-            {environmentLabel}
+            {envLabel}
           </span>
-          <span className="text-[11px] text-slate-500">{environmentHint}</span>
+          <span className="text-[11px] text-slate-500">{envHint}</span>
         </div>
       </header>
 
-      {/* KPI cards */}
+      {/* KPIs */}
       <section
-        aria-labelledby="billing-stats-title"
+        aria-labelledby="dashboard-kpis"
         className="grid gap-4 md:grid-cols-2 lg:grid-cols-5"
       >
-        <h2 id="billing-stats-title" className="sr-only">
-          Billing KPIs
+        <h2 id="dashboard-kpis" className="sr-only">
+          Key performance indicators
         </h2>
 
         <article className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
@@ -244,7 +239,7 @@ const DashboardPage: FC = memo(function DashboardPage() {
           <p className="mt-2 text-2xl font-semibold text-slate-900">
             AED {stats.totalPremium.toLocaleString('en-AE', { minimumFractionDigits: 2 })}
           </p>
-          <p className="mt-1 text-xs text-slate-500">Sum of all insured premiums.</p>
+          <p className="mt-1 text-xs text-slate-500">Sum of all written premiums.</p>
         </article>
 
         <article className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
@@ -264,7 +259,7 @@ const DashboardPage: FC = memo(function DashboardPage() {
           <p className="mt-2 text-2xl font-semibold text-emerald-700">
             AED {stats.totalCollected.toLocaleString('en-AE', { minimumFractionDigits: 2 })}
           </p>
-          <p className="mt-1 text-xs text-slate-500">Fully settled invoices.</p>
+          <p className="mt-1 text-xs text-slate-500">Fully settled receivables.</p>
         </article>
 
         <article className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
@@ -274,7 +269,7 @@ const DashboardPage: FC = memo(function DashboardPage() {
           <p className="mt-2 text-2xl font-semibold text-slate-900">
             {stats.activePolicies.toLocaleString('en-AE')}
           </p>
-          <p className="mt-1 text-xs text-slate-500">Currently in force.</p>
+          <p className="mt-1 text-xs text-slate-500">In-force book size.</p>
         </article>
 
         <article className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
@@ -284,14 +279,14 @@ const DashboardPage: FC = memo(function DashboardPage() {
           <p className="mt-2 text-2xl font-semibold text-rose-700">
             {stats.overdueInvoices.toLocaleString('en-AE')}
           </p>
-          <p className="mt-1 text-xs text-slate-500">Require immediate follow-up.</p>
+          <p className="mt-1 text-xs text-slate-500">Require urgent follow-up.</p>
         </article>
       </section>
 
       {(policyState.error || invoiceState.error) && (
         <section
-          aria-label="Data source alerts"
-          className="rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-xs text-amber-900"
+          aria-label="Data source warnings"
+          className="rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-xs text-amber-900"
         >
           <ul className="list-disc space-y-1 pl-4">
             {policyState.error && <li>{policyState.error}</li>}
@@ -300,22 +295,22 @@ const DashboardPage: FC = memo(function DashboardPage() {
         </section>
       )}
 
-      {/* Policies + Invoices */}
+      {/* Split view */}
       <section className="grid gap-6 lg:grid-cols-2">
         <section
-          aria-labelledby="policies-section-title"
+          aria-labelledby="dashboard-policies-title"
           className="flex flex-col rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100"
         >
           <div className="mb-4 flex items-center justify-between gap-2">
             <div>
               <h2
-                id="policies-section-title"
+                id="dashboard-policies-title"
                 className="text-base font-semibold text-slate-900"
               >
-                Portfolio Policies
+                Latest Policies
               </h2>
               <p className="text-xs text-slate-500">
-                Latest written risks with premium and status.
+                Recent risks written across the motor book.
               </p>
             </div>
             <span className="text-xs text-slate-500">
@@ -336,19 +331,19 @@ const DashboardPage: FC = memo(function DashboardPage() {
         </section>
 
         <section
-          aria-labelledby="invoices-section-title"
+          aria-labelledby="dashboard-invoices-title"
           className="flex flex-col rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-100"
         >
           <div className="mb-4 flex items-center justify-between gap-2">
             <div>
               <h2
-                id="invoices-section-title"
+                id="dashboard-invoices-title"
                 className="text-base font-semibold text-slate-900"
               >
-                Accounts Receivable
+                Latest Invoices
               </h2>
               <p className="text-xs text-slate-500">
-                Issued invoices linked to policy portfolio.
+                Accounts receivable linked to current portfolio.
               </p>
             </div>
             <span className="text-xs text-slate-500">
@@ -368,7 +363,7 @@ const DashboardPage: FC = memo(function DashboardPage() {
           )}
         </section>
       </section>
-    </div>
+    </main>
   );
 });
 
