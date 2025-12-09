@@ -1,14 +1,16 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
-export function createClient() {
+export function createSupabaseServerClient() {
   const cookieStore = cookies();
 
   const url: string | undefined = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key: string | undefined = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !key) {
-    throw new Error('Supabase server client is not configured. Missing URL or anon key.');
+    throw new Error(
+      'Supabase server client is not configured. Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY.'
+    );
   }
 
   return createServerClient(url, key, {
