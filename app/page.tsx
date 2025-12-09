@@ -30,28 +30,44 @@ interface ApiState<T> {
 
 const MOCK_INVOICES: InvoiceSummary[] = [
   {
-    id: '1',
-    policyNumber: 'POL-20241201-ALF-001',
-    customerName: 'Ahmed Al Farsi',
-    totalAmount: 2450.0,
+    id: 'INV-1001',
+    policyNumber: 'POL-UAE-2025-0001',
+    customerName: 'Dubai Luxury Motors LLC',
+    totalAmount: 5125.75,
     status: 'pending',
-    createdAt: '2024-12-01T10:15:00Z',
+    createdAt: '2025-01-05T09:30:00Z',
   },
   {
-    id: '2',
-    policyNumber: 'POL-20241120-SAL-002',
-    customerName: 'Salama Motors LLC',
-    totalAmount: 3150.5,
+    id: 'INV-1002',
+    policyNumber: 'POL-UAE-2024-1189',
+    customerName: 'Fatima Al Nahyan',
+    totalAmount: 1875.0,
     status: 'paid',
-    createdAt: '2024-11-20T09:00:00Z',
+    createdAt: '2024-12-20T11:10:00Z',
   },
   {
-    id: '3',
-    policyNumber: 'POL-20241101-NAS-003',
-    customerName: 'Nasser Al Mansoori',
-    totalAmount: 1899.75,
+    id: 'INV-1003',
+    policyNumber: 'POL-UAE-2024-0973',
+    customerName: 'Abu Dhabi Car Rentals',
+    totalAmount: 7640.25,
     status: 'overdue',
-    createdAt: '2024-11-01T14:30:00Z',
+    createdAt: '2024-12-01T15:45:00Z',
+  },
+  {
+    id: 'INV-1004',
+    policyNumber: 'POL-UAE-2024-0654',
+    customerName: 'Rashid Al Marri',
+    totalAmount: 2230.5,
+    status: 'pending',
+    createdAt: '2024-11-18T08:20:00Z',
+  },
+  {
+    id: 'INV-1005',
+    policyNumber: 'POL-UAE-2024-0321',
+    customerName: 'Sharjah Fleet Services',
+    totalAmount: 9420.0,
+    status: 'paid',
+    createdAt: '2024-11-02T13:05:00Z',
   },
 ];
 
@@ -85,7 +101,6 @@ const HomePage: FC = memo(function HomePage() {
     let isMounted = true;
 
     const fetchInvoices = async () => {
-      // If Supabase env is missing, fall back to mock data without throwing
       if (
         !process.env.NEXT_PUBLIC_SUPABASE_URL ||
         !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
