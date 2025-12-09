@@ -9,7 +9,7 @@ export function createSupabaseServerClient() {
 
   if (!url || !key) {
     throw new Error(
-      'Supabase server client is not configured. Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY.'
+      'Supabase server client is not configured. Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY.',
     );
   }
 
@@ -21,10 +21,10 @@ export function createSupabaseServerClient() {
       setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
         try {
           cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
+            cookieStore.set(name, value, options),
           );
         } catch {
-          // Safe to ignore in Server Components when headers are immutable.
+          // Safe in server components when headers are already immutable
         }
       },
     },

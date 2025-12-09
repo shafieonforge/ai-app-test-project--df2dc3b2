@@ -1,4 +1,3 @@
-// app/components/InvoiceTable.tsx
 import type { FC } from 'react';
 import { memo } from 'react';
 import type { Invoice, Policy } from '@/lib/billing/types';
@@ -18,15 +17,15 @@ const InvoiceTable: FC<InvoiceTableProps> = memo(function InvoiceTable({
 
   if (invoices.length === 0) {
     return (
-      <div className="py-6 text-center text-sm text-gray-500">
+      <div className="py-6 text-center text-sm text-slate-500">
         No invoices found.
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-100">
-      <div className="grid grid-cols-6 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-600">
+    <div className="overflow-hidden rounded-xl border border-slate-100">
+      <div className="grid grid-cols-6 bg-slate-50/80 px-3 py-2 text-xs font-semibold text-slate-600">
         <div>Invoice #</div>
         <div>Policy #</div>
         <div className="hidden sm:block">Insured</div>
@@ -34,29 +33,29 @@ const InvoiceTable: FC<InvoiceTableProps> = memo(function InvoiceTable({
         <div className="text-right">Amount</div>
         <div className="text-right">Status</div>
       </div>
-      <ul className="divide-y divide-gray-100">
+      <ul className="divide-y divide-slate-100">
         {invoices.map((invoice) => {
           const policy = getPolicyById(invoice.policyId);
           return (
             <li
               key={invoice.id}
-              className="grid grid-cols-6 items-center px-3 py-2 text-xs"
+              className="grid grid-cols-6 items-center bg-white px-3 py-2 text-xs hover:bg-slate-50"
             >
-              <div className="truncate font-mono text-gray-800">
+              <div className="truncate font-mono text-slate-800">
                 {invoice.invoiceNumber}
               </div>
-              <div className="truncate font-mono text-gray-700">
+              <div className="truncate font-mono text-slate-700">
                 {policy?.policyNumber ?? '—'}
               </div>
-              <div className="hidden truncate text-gray-600 sm:block">
+              <div className="hidden truncate text-slate-600 sm:block">
                 {policy?.insuredName ?? '—'}
               </div>
-              <div className="hidden flex-col text-[11px] text-gray-500 md:flex">
+              <div className="hidden flex-col text-[11px] text-slate-500 md:flex">
                 <span>{invoice.issueDate || '—'}</span>
                 <span>Due: {invoice.dueDate || '—'}</span>
               </div>
-              <div className="text-right text-gray-900">
-                {invoice.amount.toFixed(2)}
+              <div className="text-right text-slate-900">
+                {invoice.amount.toLocaleString('en-AE', { minimumFractionDigits: 2 })}
               </div>
               <div className="flex justify-end">
                 <StatusBadge value={invoice.status} type="invoice" />

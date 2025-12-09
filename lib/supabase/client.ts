@@ -6,7 +6,7 @@ export function createSupabaseBrowserClient() {
 
   if (!url || !key) {
     throw new Error(
-      'Supabase client is not configured. Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY.'
+      'Supabase client is not configured. Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY.',
     );
   }
 

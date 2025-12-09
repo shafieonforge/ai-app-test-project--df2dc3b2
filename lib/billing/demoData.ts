@@ -1,4 +1,3 @@
-// lib/billing/demoData.ts
 import type { Policy, Invoice } from './types';
 
 export const DEMO_POLICIES: Policy[] = [

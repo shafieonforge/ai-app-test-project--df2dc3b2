@@ -1,4 +1,3 @@
-// lib/billing/types.ts
 export type PolicyStatus = 'active' | 'cancelled' | 'expired';
 export type InvoiceStatus = 'pending' | 'paid' | 'overdue';
 
@@ -30,10 +29,4 @@ export interface BillingStats {
   totalCollected: number;
   activePolicies: number;
   overdueInvoices: number;
-}
-
-export interface ApiState<T> {
-  data: T | null;
-  error: string | null;
-  loading: boolean;
 }

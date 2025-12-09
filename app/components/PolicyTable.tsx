@@ -1,4 +1,3 @@
-// app/components/PolicyTable.tsx
 import type { FC } from 'react';
 import { memo } from 'react';
 import type { Policy } from '@/lib/billing/types';
@@ -11,15 +10,15 @@ interface PolicyTableProps {
 const PolicyTable: FC<PolicyTableProps> = memo(function PolicyTable({ policies }) {
   if (policies.length === 0) {
     return (
-      <div className="py-6 text-center text-sm text-gray-500">
+      <div className="py-6 text-center text-sm text-slate-500">
         No policies found.
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-100">
-      <div className="grid grid-cols-6 bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-600">
+    <div className="overflow-hidden rounded-xl border border-slate-100">
+      <div className="grid grid-cols-6 bg-slate-50/80 px-3 py-2 text-xs font-semibold text-slate-600">
         <div>Policy #</div>
         <div>Insured</div>
         <div className="hidden sm:block">Vehicle</div>
@@ -27,26 +26,26 @@ const PolicyTable: FC<PolicyTableProps> = memo(function PolicyTable({ policies }
         <div className="text-right">Premium</div>
         <div className="text-right">Status</div>
       </div>
-      <ul className="divide-y divide-gray-100">
+      <ul className="divide-y divide-slate-100">
         {policies.map((policy) => (
           <li
             key={policy.id}
-            className="grid grid-cols-6 items-center px-3 py-2 text-xs"
+            className="grid grid-cols-6 items-center bg-white px-3 py-2 text-xs hover:bg-slate-50"
           >
-            <div className="truncate font-mono text-gray-800">
+            <div className="truncate font-mono text-slate-800">
               {policy.policyNumber}
             </div>
-            <div className="truncate text-gray-700">
+            <div className="truncate text-slate-800">
               {policy.insuredName}
             </div>
-            <div className="hidden truncate text-gray-600 sm:block">
+            <div className="hidden truncate text-slate-600 sm:block">
               {policy.vehiclePlate}
             </div>
-            <div className="hidden truncate text-gray-600 md:block">
+            <div className="hidden truncate text-slate-600 md:block">
               {policy.emirate}
             </div>
-            <div className="text-right text-gray-900">
-              {policy.premium.toFixed(2)}
+            <div className="text-right text-slate-900">
+              {policy.premium.toLocaleString('en-AE', { minimumFractionDigits: 2 })}
             </div>
             <div className="flex justify-end">
               <StatusBadge value={policy.status} type="policy" />

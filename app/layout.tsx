@@ -4,7 +4,7 @@ import MainNav from './components/MainNav';
 
 export const metadata: Metadata = {
   title: 'Motor Billing UAE',
-  description: 'Motor insurance billing app for UAE brokers',
+  description: 'Enterprise-grade motor insurance billing for UAE brokers',
 };
 
 interface RootLayoutProps {
@@ -14,9 +14,9 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-gray-50 text-gray-900">
+      <body className="min-h-screen bg-slate-50 text-slate-900">
         <MainNav />
-        <main className="pt-2">{children}</main>
+        <main className="pt-4 pb-10">{children}</main>
       </body>
     </html>
   );
